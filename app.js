@@ -4,6 +4,7 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var http = require("http");
+var webSocketServer = require("websocket").server;
 
 var app = express();
 
@@ -29,7 +30,29 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
+var connections = [];
 var server = http.createServer(app);
+var wsServer = new webSocketServer({
+  httpServer: server,
+});
+wsServer.on("request", (req) => {
+  var connection = req.accept("chatting");
+  connections.push(connection);
+  console.log(new Date() + " Connection accepted. Now " + connections.length);
+
+  connection.on("message", (message) => {
+    if (message.type === "utf8")
+      connections.forEach((c) => c.send(message.utf8Data));
+  });
+
+  connection.on("close", () => {
+    connections = connections.filter((c) => c != connection);
+    console.log(
+      new Date() + " Connection disconnected. Now " + connections.length
+    );
+  });
+});
+
 server.listen(3000, () => {
   console.log("Express start to listen port 3000");
 });
