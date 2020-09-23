@@ -35,13 +35,17 @@ var server = http.createServer(app);
 var wsServer = new webSocketServer({
   httpServer: server,
 });
+
 wsServer.on("request", (req) => {
+  // chatting 프로토콜을 받는다.
   var connection = req.accept("chatting");
+
   connections.push(connection);
   console.log(new Date() + " Connection accepted. Now " + connections.length);
 
   connection.on("message", (message) => {
     if (message.type === "utf8")
+      // 브로드캐스팅
       connections.forEach((c) => c.send(message.utf8Data));
   });
 
